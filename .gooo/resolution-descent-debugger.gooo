@@ -1,0 +1,26 @@
+gooo resolution_descent_debugger v1
+authority metacode
+origin source=.gooo/resolution-descent-debugger.gooo contract=contracts/denominator-v1.json fixture=caller_owned
+resolution_lattice levels=STAGE,STEP,REASON,BLOCKED_BY
+probe_capability id=fixture_lookup input=caller_owned_fixture observation=READ_FIXTURE
+probe_capability id=source_digest_check input=caller_owned_fixture observation=COMPARE_SOURCE_DIGEST
+probe_effect id=read_only kind=READ_ONLY repository_writes=0
+probe_effect id=forbidden_write kind=FORBIDDEN repository_writes=1
+descent_rule ordinal=1 from=STAGE to=STEP capability=fixture_lookup effect=read_only
+descent_rule ordinal=2 from=STEP to=REASON capability=fixture_lookup effect=read_only
+descent_rule ordinal=3 from=REASON to=BLOCKED_BY capability=fixture_lookup effect=read_only
+descent_rule ordinal=4 from=STAGE to=BLOCKED_BY capability=source_digest_check effect=read_only
+claim_transition ordinal=1 from=OPEN to=DISCHARGED evidence=matching_probe
+claim_transition ordinal=2 from=OPEN to=REFUTED evidence=contradictory_probe
+claim_transition ordinal=3 from=OPEN to=OPEN evidence=insufficient_probe
+decision statuses=CLOSED,UNKNOWN,REFUTED
+precedence REFUTED>UNKNOWN>CLOSED
+unknown_fields stage,step,reason,unknown_class,next_operation,blocked_by
+fixed_denominator id=resolution-descent-debugger-v1 cases=7 unit=scenario
+scenario ordinal=1 id=direct-missing-closed-by-probe expected=CLOSED fixture=fixtures/cases/direct-missing-closed-by-probe.json
+scenario ordinal=2 id=dependency-blocked-frontier-narrowed-closed expected=CLOSED fixture=fixtures/cases/dependency-blocked-frontier-narrowed-closed.json
+scenario ordinal=3 id=stale-source-refuted expected=REFUTED fixture=fixtures/cases/stale-source-refuted.json
+scenario ordinal=4 id=ambiguous-evidence-remains-unknown expected=UNKNOWN fixture=fixtures/cases/ambiguous-evidence-remains-unknown.json
+scenario ordinal=5 id=unbounded-descent-unknown expected=UNKNOWN fixture=fixtures/cases/unbounded-descent-unknown.json
+scenario ordinal=6 id=forbidden-observation-effect-refuted expected=REFUTED fixture=fixtures/cases/forbidden-observation-effect-refuted.json
+scenario ordinal=7 id=replay-closed expected=CLOSED fixture=fixtures/cases/replay-closed.json

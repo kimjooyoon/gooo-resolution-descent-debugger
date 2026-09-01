@@ -1,0 +1,25 @@
+{
+  "schema": "gooo/resolution-descent-debugger/denominator/v1",
+  "denominator_id": "resolution-descent-debugger-v1",
+  "scenario_count": 7,
+  "root_readme_inventory_excluded": true,
+  "unknown_fields": ["stage", "step", "reason", "unknown_class", "next_operation", "blocked_by"],
+  "precedence": ["REFUTED", "UNKNOWN", "CLOSED"],
+  "authority": {
+    "source": "metacode",
+    "input_repository_writes": 0,
+    "automatic_commit": 0,
+    "automatic_push": 0,
+    "automatic_merge": 0,
+    "automatic_release": 0
+  },
+  "scenarios": [
+    {"ordinal":1,"id":"direct-missing-closed-by-probe","expected":"CLOSED"},
+    {"ordinal":2,"id":"dependency-blocked-frontier-narrowed-closed","expected":"CLOSED"},
+    {"ordinal":3,"id":"stale-source-refuted","expected":"REFUTED"},
+    {"ordinal":4,"id":"ambiguous-evidence-remains-unknown","expected":"UNKNOWN"},
+    {"ordinal":5,"id":"unbounded-descent-unknown","expected":"UNKNOWN"},
+    {"ordinal":6,"id":"forbidden-observation-effect-refuted","expected":"REFUTED"},
+    {"ordinal":7,"id":"replay-closed","expected":"CLOSED"}
+  ]
+}

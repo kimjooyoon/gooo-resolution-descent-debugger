@@ -1,0 +1,91 @@
+name: gooo-resolution-descent-debugger CI
+
+"on":
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.0'
+          cache: false
+      - name: Verify toolchain and source boundary
+        run: |
+          set -Eeuo pipefail
+          test "$(go env GOVERSION)" = go1.27.0
+          test "$(git ls-files 'README.md' | wc -l | tr -d ' ')" = 1
+          evidence="$RUNNER_TEMP/gooo-resolution-descent-debugger"
+          echo "EVIDENCE_ROOT=$evidence" >> "$GITHUB_ENV"
+          mkdir -p "$evidence"
+      - name: Check Go formatting
+        run: test -z "$(gofmt -l $(git ls-files '*.go'))"
+      - name: Build command and generated-artifact verifier
+        run: |
+          set -Eeuo pipefail
+          go build -trimpath -o "$EVIDENCE_ROOT/gooo-resolution-descent-debugger" ./cmd/gooo-resolution-descent-debugger
+      - name: Parse authoritative .gooo and denominator
+        run: |
+          set -Eeuo pipefail
+          ./scripts/semantic-audit.sh "$GITHUB_WORKSPACE"
+          "$EVIDENCE_ROOT/gooo-resolution-descent-debugger" manifest \
+            --source .gooo/resolution-descent-debugger.gooo \
+            --contract contracts/denominator-v1.json > "$EVIDENCE_ROOT/semantic-ir.json"
+      - name: Measure compile stage
+        run: ./scripts/measure-command.sh "$EVIDENCE_ROOT/compile.json" compile "$EVIDENCE_ROOT/compile.log" go test -run '^$' ./...
+      - name: Measure build stage
+        run: ./scripts/measure-command.sh "$EVIDENCE_ROOT/build.json" build "$EVIDENCE_ROOT/build.log" go build -trimpath -o "$EVIDENCE_ROOT/gooo-resolution-descent-debugger" ./cmd/gooo-resolution-descent-debugger
+      - name: Run Go vet
+        run: go vet ./...
+      - name: Measure test stage
+        run: ./scripts/measure-command.sh "$EVIDENCE_ROOT/test.json" test "$EVIDENCE_ROOT/test.log" go test -json -count=1 ./...
+      - name: Measure fixed conformance stage
+        run: ./scripts/measure-command.sh "$EVIDENCE_ROOT/conformance.json" conformance "$EVIDENCE_ROOT/conformance.log" ./scripts/conformance.sh "$GITHUB_WORKSPACE" "$EVIDENCE_ROOT/gooo-resolution-descent-debugger" "$EVIDENCE_ROOT/conformance"
+      - name: Measure generated artifact integration stage
+        run: ./scripts/measure-command.sh "$EVIDENCE_ROOT/integration.json" integration "$EVIDENCE_ROOT/integration.log" ./scripts/integration.sh "$EVIDENCE_ROOT/conformance/cases/generated" "$EVIDENCE_ROOT/integration-output"
+      - name: Write exact CI evidence
+        if: always()
+        run: |
+          set -Eeuo pipefail
+          if [[ -f "$EVIDENCE_ROOT/conformance/cases/conformance-report.json" && -f "$EVIDENCE_ROOT/integration.json" ]]; then
+            ./scripts/ci-metrics.sh "$GITHUB_WORKSPACE" "$EVIDENCE_ROOT/ci-evidence.json" \
+              "$EVIDENCE_ROOT/conformance/cases/conformance-report.json" \
+              "$EVIDENCE_ROOT/compile.json" "$EVIDENCE_ROOT/build.json" "$EVIDENCE_ROOT/test.json" \
+              "$EVIDENCE_ROOT/conformance.json" "$EVIDENCE_ROOT/integration.json"
+            jq -e '
+              .schema == "gooo/resolution-descent-debugger/ci-evidence/v1" and
+              .verification_authority == "GITHUB_ACTIONS" and .root_readme_excluded == true and
+              (all([.inventory.go_files,.inventory.gooo_files,.inventory.go_physical_lines,.inventory.gooo_physical_lines,.inventory.descendant_dirs,.inventory.regular_files,.generated.files,.generated.bytes][]; type == "number")) and
+              (all(.stages[]; (.wall_ms|type) == "number" and (.peak_rss_kib|type) == "number")) and
+              .tests == {total:7,selected:7,executed:7,reused:0,failed:2,unknown:2} and
+              .corpus == {total:7,closed:3,unknown:2,refuted:2} and .repository_writes == 0 and
+              .authority.local_test_executions == 0 and .authority.local_build_executions == 0 and
+              .authority.local_vet_executions == 0 and .authority.local_conformance_executions == 0 and
+              .authority.local_integration_executions == 0 and
+              (all(.exact_pair_vectors[]; .exact_pair == true and .pair.exact_identity == true))
+            ' "$EVIDENCE_ROOT/ci-evidence.json" >/dev/null
+          fi
+      - name: Publish CI summary
+        if: always()
+        run: |
+          set -Eeuo pipefail
+          if [[ -f "$EVIDENCE_ROOT/conformance/cases/conformance-report.json" && -f "$EVIDENCE_ROOT/ci-evidence.json" ]]; then
+            jq -r '"decision=\(.decision) cases=\(.summary.cases_total) closed=\(.summary.closed) unknown=\(.summary.unknown) refuted=\(.summary.refuted)"' "$EVIDENCE_ROOT/conformance/cases/conformance-report.json" >> "$GITHUB_STEP_SUMMARY"
+            jq -r '"inventory Go/Gooo=\(.inventory.go_files)/\(.inventory.gooo_files) physical-lines=\(.inventory.go_physical_lines)/\(.inventory.gooo_physical_lines) generated=\(.generated.files)/\(.generated.bytes) bytes repository_writes=\(.repository_writes)"' "$EVIDENCE_ROOT/ci-evidence.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gooo-resolution-descent-debugger-evidence-${{ github.run_id }}
+          if-no-files-found: error
+          path: ${{ env.EVIDENCE_ROOT }}

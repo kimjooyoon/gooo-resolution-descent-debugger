@@ -1,0 +1,28 @@
+{
+  "schema": "gooo/resolution-descent-debugger/fixture/v1",
+  "case_id": "unbounded-descent-unknown",
+  "subject": "artifact://generated/unknown",
+  "start_resolution": "BLOCKED_BY",
+  "claim": {
+    "id": "claim-unbounded-descent",
+    "resolution": "BLOCKED_BY",
+    "state": "OPEN",
+    "stage": "RESOLUTION",
+    "step": "DESCEND_BEYOND_FRONTIER",
+    "reason": "NO_LOWER_RESOLUTION_DECLARED",
+    "unknown_class": "UNBOUNDED_DESCENT",
+    "next_operation": "DECLARE_LOWER_RESOLUTION",
+    "blocked_by": ["descent:resolution-bound"]
+  },
+  "probe": {
+    "id": "probe-unbounded-descent",
+    "operation": "attempt-next-lattice-node",
+    "capability": "fixture_lookup",
+    "effect": "read_only",
+    "target_resolution": "",
+    "observation": "UNBOUNDED",
+    "observed_ids": [],
+    "expected_ids": ["descent:resolution-bound"],
+    "evidence": "the declared lattice has no node below BLOCKED_BY"
+  }
+}

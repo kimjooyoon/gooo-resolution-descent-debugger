@@ -1,0 +1,106 @@
+name: gooo-resolution-descent-debugger immutable release
+
+"on":
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Exact merged main commit to release
+        required: true
+        type: string
+      release_version:
+        description: New unused 0.x.y version; failed versions are never reused
+        required: true
+        default: '0.1.0'
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      RELEASE_VERSION: ${{ inputs.release_version }}
+      RELEASE_USER_TOKEN: ${{ secrets.IMMUTABLE_RELEASE_USER_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-go@v6
+        with:
+          go-version: '1.27.0'
+          cache: false
+      - name: Bind exact merged commit and refuse reuse
+        run: |
+          set -Eeuo pipefail
+          case "$RELEASE_VERSION" in 0.*.*) ;; *) exit 64 ;; esac
+          RELEASE_TAG="v$RELEASE_VERSION"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git rev-parse --abbrev-ref HEAD)" = main
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then exit 1; fi
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" >/dev/null 2>&1; then exit 1; fi
+      - name: Verify immutable release setting with user API token
+        run: ./scripts/verify-release-setting.sh --setting
+      - name: Build and run CI-authoritative conformance
+        run: |
+          set -Eeuo pipefail
+          evidence="$RUNNER_TEMP/gooo-resolution-descent-debugger-release"
+          mkdir -p "$evidence"
+          go vet ./...
+          test -z "$(gofmt -l $(git ls-files '*.go'))"
+          go build -trimpath -o "$evidence/gooo-resolution-descent-debugger" ./cmd/gooo-resolution-descent-debugger
+          ./scripts/conformance.sh "$GITHUB_WORKSPACE" "$evidence/gooo-resolution-descent-debugger" "$evidence/conformance"
+          ./scripts/integration.sh "$evidence/conformance/cases/generated" "$evidence/integration"
+          ./scripts/ci-metrics.sh "$GITHUB_WORKSPACE" "$evidence/ci-evidence.json" \
+            "$evidence/conformance/cases/conformance-report.json" \
+            <(jq -n '{wall_ms:0,peak_rss_kib:0}') <(jq -n '{wall_ms:0,peak_rss_kib:0}') \
+            <(jq -n '{wall_ms:0,peak_rss_kib:0}') <(jq -n '{wall_ms:0,peak_rss_kib:0}') <(jq -n '{wall_ms:0,peak_rss_kib:0}')
+      - name: Assemble exact release assets
+        run: |
+          set -Eeuo pipefail
+          evidence="$RUNNER_TEMP/gooo-resolution-descent-debugger-release"
+          assets="$evidence/assets"
+          mkdir -p "$assets"
+          source="gooo-resolution-descent-debugger-source-$RELEASE_TAG.tar.gz"
+          binary="gooo-resolution-descent-debugger-linux-amd64-$RELEASE_TAG.tar.gz"
+          report="conformance-report-$RELEASE_TAG.json"
+          metrics="ci-evidence-$RELEASE_TAG.json"
+          version="version-$RELEASE_TAG.json"
+          git archive --format=tar.gz --prefix="gooo-resolution-descent-debugger-$RELEASE_TAG/" "$EXPECTED_SHA" > "$assets/$source"
+          tar -czf "$assets/$binary" -C "$evidence" gooo-resolution-descent-debugger
+          cp "$evidence/conformance/cases/conformance-report.json" "$assets/$report"
+          cp "$evidence/ci-evidence.json" "$assets/$metrics"
+          jq -n --arg schema "gooo/resolution-descent-debugger/release/v1" --arg version "$RELEASE_VERSION" --arg tag "$RELEASE_TAG" --arg commit "$EXPECTED_SHA" '{schema:$schema,version:$version,tag:$tag,commit:$commit,immutable_release_required:true,repository_writes:0,automatic_merge:0}' > "$assets/$version"
+          manifest="$assets/release-manifest-$RELEASE_TAG.json"
+          jq -n --arg schema "gooo/resolution-descent-debugger/release-manifest/v1" --arg version "$RELEASE_VERSION" --arg tag "$RELEASE_TAG" --arg commit "$EXPECTED_SHA" --slurpfile files <(find "$assets" -maxdepth 1 -type f -printf '%f\n' | sort | while read -r file; do size=$(stat -c '%s' "$assets/$file"); digest="sha256:$(sha256sum "$assets/$file" | awk '{print $1}')"; jq -n --arg name "$file" --arg digest "$digest" --argjson size "$size" '{name:$name,size:$size,digest:$digest}'; done | jq -s .) '{schema:$schema,version:$version,tag:$tag,commit:$commit,assets:($files[0] | map(select(.name | startswith("release-manifest-") | not)))}' > "$manifest"
+          jq -e '.assets | length == 5 and all(.[]; .name != "")' "$manifest" >/dev/null
+          (cd "$assets" && sha256sum * > SHA256SUMS)
+          echo "RELEASE_ASSETS=$assets" >> "$GITHUB_ENV"
+          echo "RELEASE_MANIFEST=$manifest" >> "$GITHUB_ENV"
+      - name: Create annotated tag and draft release
+        run: |
+          set -Eeuo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "$RELEASE_TAG" "$EXPECTED_SHA" -m "gooo-resolution-descent-debugger $RELEASE_TAG"
+          git push origin "refs/tags/$RELEASE_TAG"
+          gh release create "$RELEASE_TAG" --verify-tag --draft --title "gooo-resolution-descent-debugger $RELEASE_TAG" --notes 'Draft pending exact asset upload and immutable API verification.'
+      - name: Upload assets to draft release
+        run: gh release upload "$RELEASE_TAG" "$RELEASE_ASSETS"/*
+      - name: Publish draft release once
+        run: gh release edit "$RELEASE_TAG" --draft=false
+      - name: Verify public release API immutable state and digests
+        run: ./scripts/verify-release-setting.sh --release "$RELEASE_TAG" "$RELEASE_MANIFEST" | tee "$RUNNER_TEMP/gooo-resolution-descent-debugger-release/release-audit.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gooo-resolution-descent-debugger-release-audit-${{ inputs.release_version }}
+          if-no-files-found: error
+          path: |
+            ${{ env.RELEASE_ASSETS }}/*
+            ${{ runner.temp }}/gooo-resolution-descent-debugger-release/release-audit.json
