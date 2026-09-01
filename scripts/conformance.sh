@@ -33,7 +33,7 @@ jq -e '
   (.cases | length) == 7 and
   ([.cases[] | select(.decision == .expected)] | length) == 7 and
   ([.cases[] | select(.before_unknown_frontier_cardinality == (.before_blocked_by|length) and .after_unknown_frontier_cardinality == (.after_blocked_by|length))] | length) == 7 and
-  ([.cases[] | select(.claim_transitions|length == 1 and .claims|length == 1 and .claims[0].state == "OPEN" and .claim_transitions[0].append_only == true)] | length) == 7 and
+  ([.cases[] | select((.claim_transitions|length) == 1 and (.claims|length) == 1 and .claims[0].state == "OPEN" and .claim_transitions[0].append_only == true)] | length) == 7 and
   ([.cases[] | select(.case_id == "direct-missing-closed-by-probe" and .before_blocked_by == ["missing:trace.event"] and .after_blocked_by == [] and .claim_transitions[0].from == "OPEN" and .claim_transitions[0].to == "DISCHARGED")] | length) == 1 and
   ([.cases[] | select(.case_id == "dependency-blocked-frontier-narrowed-closed" and .before_blocked_by == ["dep:contract","dep:input"] and .narrowed_frontier == ["dep:input"] and .after_blocked_by == [] and .claim_transitions[0].to == "DISCHARGED")] | length) == 1 and
   ([.cases[] | select(.case_id == "stale-source-refuted" and .before_blocked_by == ["source:current-digest"] and .after_blocked_by == [] and .claim_transitions[0].to == "REFUTED")] | length) == 1 and
