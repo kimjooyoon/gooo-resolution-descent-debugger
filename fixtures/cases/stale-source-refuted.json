@@ -1,0 +1,28 @@
+{
+  "schema": "gooo/resolution-descent-debugger/fixture/v1",
+  "case_id": "stale-source-refuted",
+  "subject": "source://module/checkout",
+  "start_resolution": "STAGE",
+  "claim": {
+    "id": "claim-stale-source",
+    "resolution": "STAGE",
+    "state": "OPEN",
+    "stage": "SOURCE",
+    "step": "BIND_SOURCE_DIGEST",
+    "reason": "SOURCE_DIGEST_UNAVAILABLE",
+    "unknown_class": "DIRECT_MISSING",
+    "next_operation": "PROBE_SOURCE_DIGEST",
+    "blocked_by": ["source:current-digest"]
+  },
+  "probe": {
+    "id": "probe-stale-source",
+    "operation": "compare-source-digest",
+    "capability": "source_digest_check",
+    "effect": "read_only",
+    "target_resolution": "BLOCKED_BY",
+    "observation": "STALE_SOURCE",
+    "observed_ids": ["source:stale-digest"],
+    "expected_ids": ["source:current-digest"],
+    "evidence": "the fixture's source digest contradicts the open source binding"
+  }
+}

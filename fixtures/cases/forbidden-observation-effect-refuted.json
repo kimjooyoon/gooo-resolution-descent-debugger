@@ -1,0 +1,28 @@
+{
+  "schema": "gooo/resolution-descent-debugger/fixture/v1",
+  "case_id": "forbidden-observation-effect-refuted",
+  "subject": "fixture://mutation-request",
+  "start_resolution": "STEP",
+  "claim": {
+    "id": "claim-forbidden-effect",
+    "resolution": "STEP",
+    "state": "OPEN",
+    "stage": "OBSERVATION",
+    "step": "READ_FIXTURE",
+    "reason": "OBSERVATION_EFFECT_UNPROVEN",
+    "unknown_class": "DIRECT_MISSING",
+    "next_operation": "PROBE_WITH_DECLARED_EFFECT",
+    "blocked_by": ["effect:filesystem-write"]
+  },
+  "probe": {
+    "id": "probe-forbidden-effect",
+    "operation": "request-mutating-observation",
+    "capability": "fixture_lookup",
+    "effect": "forbidden_write",
+    "target_resolution": "REASON",
+    "observation": "FORBIDDEN_EFFECT",
+    "observed_ids": ["effect:filesystem-write"],
+    "expected_ids": ["effect:filesystem-write"],
+    "evidence": "the probe requests an effect forbidden by the read-only boundary"
+  }
+}

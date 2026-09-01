@@ -1,0 +1,28 @@
+{
+  "schema": "gooo/resolution-descent-debugger/fixture/v1",
+  "case_id": "ambiguous-evidence-remains-unknown",
+  "subject": "trace://worker/ambiguous",
+  "start_resolution": "REASON",
+  "claim": {
+    "id": "claim-ambiguous-evidence",
+    "resolution": "REASON",
+    "state": "OPEN",
+    "stage": "TRACE",
+    "step": "COMPARE_REASON",
+    "reason": "MULTIPLE_PROBES_MATCH",
+    "unknown_class": "AMBIGUOUS_EVIDENCE",
+    "next_operation": "DISAMBIGUATE_PROBE_EVIDENCE",
+    "blocked_by": ["evidence:reason-a", "evidence:reason-b"]
+  },
+  "probe": {
+    "id": "probe-ambiguous-reasons",
+    "operation": "compare-candidate-reasons",
+    "capability": "fixture_lookup",
+    "effect": "read_only",
+    "target_resolution": "BLOCKED_BY",
+    "observation": "AMBIGUOUS",
+    "observed_ids": ["evidence:reason-a", "evidence:reason-b"],
+    "expected_ids": ["evidence:reason-a", "evidence:reason-b"],
+    "evidence": "two equally supported reasons remain"
+  }
+}

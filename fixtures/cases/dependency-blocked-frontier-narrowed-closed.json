@@ -1,0 +1,29 @@
+{
+  "schema": "gooo/resolution-descent-debugger/fixture/v1",
+  "case_id": "dependency-blocked-frontier-narrowed-closed",
+  "subject": "pipeline://deploy/17",
+  "start_resolution": "STEP",
+  "claim": {
+    "id": "claim-dependency-frontier",
+    "resolution": "STEP",
+    "state": "OPEN",
+    "stage": "EXECUTION",
+    "step": "CHECK_DEPENDENCIES",
+    "reason": "DEPENDENCY_EVIDENCE_INCOMPLETE",
+    "unknown_class": "DEPENDENCY_BLOCKED",
+    "next_operation": "PROBE_DEPENDENCY_FRONTIER",
+    "blocked_by": ["dep:contract", "dep:input"]
+  },
+  "probe": {
+    "id": "probe-dependency-frontier",
+    "operation": "narrow-dependency-frontier",
+    "capability": "fixture_lookup",
+    "effect": "read_only",
+    "target_resolution": "REASON",
+    "observation": "DEPENDENCY_MATCH",
+    "observed_ids": ["dep:contract", "dep:input"],
+    "expected_ids": ["dep:contract", "dep:input"],
+    "narrowed_frontier": ["dep:input"],
+    "evidence": "both dependency witnesses bind to the same lower-resolution probe"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "schema": "gooo/resolution-descent-debugger/fixture/v1",
+  "case_id": "direct-missing-closed-by-probe",
+  "subject": "trace://request/42",
+  "start_resolution": "STAGE",
+  "claim": {
+    "id": "claim-direct-missing",
+    "resolution": "STAGE",
+    "state": "OPEN",
+    "stage": "TRACE",
+    "step": "READ_EVENT",
+    "reason": "TRACE_FIELD_MISSING",
+    "unknown_class": "DIRECT_MISSING",
+    "next_operation": "PROBE_STEP_RESOLUTION",
+    "blocked_by": ["missing:trace.event"]
+  },
+  "probe": {
+    "id": "probe-direct-field",
+    "operation": "lookup-field-at-lower-resolution",
+    "capability": "fixture_lookup",
+    "effect": "read_only",
+    "target_resolution": "STEP",
+    "observation": "MATCH",
+    "observed_ids": ["missing:trace.event"],
+    "expected_ids": ["missing:trace.event"],
+    "evidence": "step witness identifies the missing event"
+  }
+}
