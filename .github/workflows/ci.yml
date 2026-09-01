@@ -65,7 +65,7 @@ jobs:
             jq -e '
               .schema == "gooo/resolution-descent-debugger/ci-evidence/v1" and
               .verification_authority == "GITHUB_ACTIONS" and .root_readme_excluded == true and
-              (all([.inventory.go_files,.inventory.gooo_files,.inventory.go_physical_lines,.inventory.gooo_physical_lines,.inventory.descendant_dirs,.inventory.regular_files,.generated.files,.generated.bytes]; type == "number")) and
+              (all([.inventory.go_files,.inventory.gooo_files,.inventory.go_physical_lines,.inventory.gooo_physical_lines,.inventory.descendant_dirs,.inventory.regular_files,.generated.files,.generated.bytes][]; type == "number")) and
               (all(.stages[]; (.wall_ms|type) == "number" and (.peak_rss_kib|type) == "number")) and
               .tests == {total:7,selected:7,executed:7,reused:0,failed:2,unknown:2} and
               .corpus == {total:7,closed:3,unknown:2,refuted:2} and .repository_writes == 0 and
