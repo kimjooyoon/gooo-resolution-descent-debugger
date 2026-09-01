@@ -1,0 +1,11 @@
+{
+  "schema": "gooo/resolution-descent-debugger/immutable-releases-observation/v1",
+  "repository": "kimjooyoon/gooo-resolution-descent-debugger",
+  "endpoint": "GET /repos/{owner}/{repo}/immutable-releases",
+  "authority": "USER_API_OPERATOR_OBSERVATION",
+  "observed_at": "2026-09-01T07:52:21Z",
+  "enabled": true,
+  "enforced_by_owner": false,
+  "token_stored_in_repository": false,
+  "token_stored_in_actions": false
+}
