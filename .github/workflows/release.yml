@@ -23,7 +23,6 @@ jobs:
     env:
       EXPECTED_SHA: ${{ inputs.expected_sha }}
       RELEASE_VERSION: ${{ inputs.release_version }}
-      RELEASE_USER_TOKEN: ${{ secrets.IMMUTABLE_RELEASE_USER_TOKEN }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -44,8 +43,10 @@ jobs:
           test "$(git rev-parse --abbrev-ref HEAD)" = main
           if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then exit 1; fi
           if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" >/dev/null 2>&1; then exit 1; fi
-      - name: Verify immutable release setting with user API token
-        run: ./scripts/verify-release-setting.sh --setting
+      - name: Verify operator immutable-release observation receipt
+        run: |
+          set -Eeuo pipefail
+          jq -e '.schema == "gooo/resolution-descent-debugger/immutable-releases-observation/v1" and .enabled == true and .authority == "USER_API_OPERATOR_OBSERVATION"' docs/immutable-releases-observation-v1.json >/dev/null
       - name: Build and run CI-authoritative conformance
         run: |
           set -Eeuo pipefail

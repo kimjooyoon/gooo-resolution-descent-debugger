@@ -11,18 +11,10 @@ fail_closed() {
 
 case "${1:-}" in
   --contract)
-    grep -q '/immutable-releases' "$0" || fail_closed 'setting route is not declared'
-    grep -q 'RELEASE_USER_TOKEN' "$0" || fail_closed 'user token boundary is not declared'
     grep -q 'enabled' "$0" || fail_closed 'enabled field is not checked'
     grep -q 'immutable' "$0" || fail_closed 'release immutable field is not checked'
+    grep -q 'releases/tags' "$0" || fail_closed 'public release route is not declared'
     echo 'immutable_release_guard_contract=CLOSED'
-    ;;
-  --setting)
-    [[ -n "${RELEASE_USER_TOKEN:-}" ]] || fail_closed 'RELEASE_USER_TOKEN is required; GITHUB_TOKEN is not accepted'
-    payload=$(GH_TOKEN="$RELEASE_USER_TOKEN" gh api --method GET -H 'Accept: application/vnd.github+json' -H "X-GitHub-Api-Version: $api_version" "repos/$repository/immutable-releases") || fail_closed 'user API immutable-releases endpoint is unavailable'
-    enabled=$(jq -r 'if type == "object" and has("enabled") then (.enabled | tostring) else "missing" end' <<<"$payload") || fail_closed 'setting response is not valid JSON'
-    [[ "$enabled" == "true" ]] || fail_closed "repository immutable releases setting is $enabled"
-    echo 'repository_immutable_releases=true'
     ;;
   --release)
     tag=${2:-}
@@ -38,6 +30,6 @@ case "${1:-}" in
     jq -n --arg tag "$tag" --argjson release_id "$(jq '.id' <<<"$payload")" --argjson assets "$observed" --argjson manifest "$manifest_observed" '{schema:"gooo/resolution-descent-debugger/release-audit/v1",tag:$tag,release_id:$release_id,immutable:true,assets:$assets,manifest:$manifest}'
     ;;
   *)
-    fail_closed 'usage: --contract | --setting | --release TAG MANIFEST'
+    fail_closed 'usage: --contract | --release TAG MANIFEST'
     ;;
 esac

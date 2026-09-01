@@ -1,10 +1,11 @@
 # Release policy
 
 Only a human-triggered GitHub Actions workflow may publish a release. The
-workflow binds the exact merged `main` commit and refuses an existing tag,
-existing release, or reuse of a failed version. Before creating a tag it calls
-the user-facing API route that exposes whether immutable releases are enabled;
-it never asks the repository administration settings endpoint with
+operator records `enabled=true` from the user-facing GitHub API in
+[`immutable-releases-observation-v1.json`](immutable-releases-observation-v1.json).
+The workflow binds the exact merged `main` commit and refuses an existing tag,
+existing release, or reuse of a failed version. It consumes that receipt and
+does not query a repository administration settings endpoint with
 `GITHUB_TOKEN`.
 
 The publication order is strict:

@@ -58,9 +58,11 @@ test, vet, conformance, and generated-artifact integration checks.
 
 ## Release boundary
 
+The repository's immutable-release setting is recorded in an operator
+user-API observation receipt at
+[`docs/immutable-releases-observation-v1.json`](docs/immutable-releases-observation-v1.json).
 The release workflow requires an exact merged `main` SHA, refuses tag or
-release reuse, confirms immutable releases through the user-facing GitHub API
-surface, creates a draft before asset upload, publishes once, and verifies the
-public release API reports `immutable=true` and the exact asset digests. It
-does not query an admin settings endpoint with `GITHUB_TOKEN`, overwrite a
-public tag, or delete a failed release.
+release reuse, creates a draft before asset upload, publishes once, and
+verifies the public release API reports `immutable=true` and the exact asset
+digests. It does not query an admin settings endpoint with `GITHUB_TOKEN`,
+overwrite a public tag, or delete a failed release.
